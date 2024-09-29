@@ -3,7 +3,7 @@ from requests import get
 from time import sleep
 from json import dumps
 
-with open("next.txt", 'r') as f:
+with open("next2.txt", 'r') as f:
     l = f.read().split("\n")
     species = [int(i.strip()) for i in l]
     #print(len(species))
@@ -11,20 +11,25 @@ with open("next.txt", 'r') as f:
 taxon_keys = ["scientific_name","sis_id","kingdom_name","phylum_name","class_name","order_name","family_name"]
 
 #print(species)
-def chill_out(thread_id, formatted_list):
+
+def write_to_file(thread_id, formatted_list):
     with open(f"{thread_id}.json", "a+") as file:
         for json in formatted_list:
             file.write(dumps(json))
             file.write("\n")
 
+def wait_timeout(thread_id, formatted_list):
+    write_to_file(thread_id, formatted_list)
+
     sleep(60)
     url = f"https://api.iucnredlist.org/api/v4/taxa/sis/49830106"
-    headers = {"Authorization":"DLs37MphZCVDG322JPfLNfTRxhjs1QibcQCt"}
+    headers = {"Authorization":"usQmjxan8iYDT9G1ipd2A5QTKzSq2yWrBihC"}
     response = get(url, headers=headers)
     return int(response.status_code) == 200
 
 def formatted_json(response):
     formatted = dict()
+    
     formatted["year_published"] = response["year_published"]
     formatted["taxon"] = {i: response["taxon"][i] for i in taxon_keys}
     formatted["locations"] = [{"country":i["description"]["en"], "presence":i["presence"]} for i in response["locations"]]
@@ -36,9 +41,9 @@ def formatted_json(response):
 
 def thread_func(start, end, result, idx):
     j = 0
-    headers = {"Authorization":"DLs37MphZCVDG322JPfLNfTRxhjs1QibcQCt"}
-    formatted_list = []
+    headers = {"Authorization":"usQmjxan8iYDT9G1ipd2A5QTKzSq2yWrBihC"}
 
+    formatted_list = []
     i = start
     while i < end:
         species_id = species[i];
@@ -48,12 +53,14 @@ def thread_func(start, end, result, idx):
         
         if int(response.status_code) != 200:
             print(response.status_code)
-            r = chill_out(idx, formatted_list)
+            r = wait_timeout(idx, formatted_list)
             if not r:
                 result[idx] = j
                 print("1 min nao foi suficiente")
                 return
+            
             formatted_list = []
+            
             if int(response.status_code) == 404:
                 j += 1
             continue
@@ -86,11 +93,12 @@ def thread_func(start, end, result, idx):
         #print(i)
         i += 1
     result[idx] = j
-    chill_out(idx, formatted_list)
+    write_to_file(idx, formatted_list)
     return
 
+
 n = len(species)
-thread_count = 1
+thread_count = 16
 threads = []
 result = [0 for i in range(thread_count)]
 for i in range(thread_count):
