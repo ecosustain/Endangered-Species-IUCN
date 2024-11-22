@@ -8,7 +8,7 @@ Created on Thu Nov  7 17:56:11 2024
 
 import pandas as pd
 import dash
-from dash import dcc, html
+from dash import Dash, dcc, html
 from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import plotly.express as px
@@ -190,12 +190,12 @@ def read_shapefiles(base_dir):
     return gdf
     
     # Percorrer todos os arquivos no diretório
-    #for file in os.listdir(shapefiles_dir):
-        #if file.endswith(".shp"):  # Verificar se é um shapefile
-            #file_path = os.path.join(shapefiles_dir, file)
-            #gdf = gpd.read_file(file_path, encoding="utf-8")
-            #gdf = gdf[columns_to_keep]
-            #geo_dataframes.append(gdf)
+    for file in os.listdir(shapefiles_dir):
+        if file.endswith(".shp"):  # Verificar se é um shapefile
+            file_path = os.path.join(shapefiles_dir, file)
+            gdf = gpd.read_file(file_path, encoding="utf-8")
+            gdf = gdf[columns_to_keep]
+            geo_dataframes.append(gdf)
     
     # Concatenar todos os GeoDataFrames em um único
     final_gdf = gpd.GeoDataFrame(pd.concat(geo_dataframes, ignore_index=True))
@@ -214,350 +214,260 @@ countries = list(countries_dataframe["Country"].unique())
 unique_categories = list(dataframe["risk_category"].dropna().unique())
 species = list(dataframe['taxon.scientific_name'].unique())
 
-# Inicialização do app Dash
-app = dash.Dash(__name__)
+app = Dash(__name__, external_stylesheets=[
+    "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Lato:wght@400;700&display=swap"
+])
 
-# Layout atualizado do app Dash
 app.layout = html.Div([
-    # Cabeçalho Global
-    html.Div([
-        html.H1("Interactive Dashboards for Species Analysis", style={
-            "font-size": "3.5em",
-            "font-weight": "bold",
-            "color": "#FFFFFF",
-            "margin": "0",
-            "margin-bottom": "25px"
-        }),
-        html.A("Interactive Species Use Chart", href="#stacked-bar-chart", style={
-            "font-size": "1em",
-            "font-weight": "bold",
-            "color": "#FFF",
-            "background-color": "#DA2A1C",
-            "padding": "7px",
-            "border-radius": "5px",
-            "text-decoration": "none",
-            "margin-right": "20px",
-        }),
-        html.A("Risk of Extinction of Species", href="#risk-graph", style={
-            "font-size": "1em",
-            "font-weight": "bold",
-            "color": "#FFF",
-            "background-color": "#DA2A1C",
-            "padding": "7px",
-            "border-radius": "5px",
-            "text-decoration": "none",
-            "margin-right": "20px",
-        }),
-        html.A("Species Distribution", href="#distribution-map", style={
-            "font-size": "1em",
-            "font-weight": "bold",
-            "color": "#FFF",
-            "background-color": "#DA2A1C",
-            "padding": "7px",
-            "border-radius": "5px",
-            "text-decoration": "none",
-        })
-    ], style={
-        "text-align": "center",
-        "padding": "20px 20px",
-        "background-color": "#AD180D",
-        "border-bottom": "2px solid #DA2A1C"
-    }),
-
-    # Caixa principal com filtros e gráfico
+    # Menu lateral
     html.Div([
     	html.Div([
-            html.H2("Interactive Species Use Chart", style={
-                "text-align": "center",
-                "color": "#AD180D",
-                "margin-bottom": "20px",
-                "font-size": "2.5em",
-                "font-weight": "bold",
-            })
-        ], style={"width": "100%"}),
-        # Filtros e Opções
-        html.Div([
-            html.H3("Filters and Options", style={
-            "color": "#DA2A1C",
-            "font-size": "22px",
-            "text-align": "center",
-            "text-weight": "bold"
-            }),
-            html.Div([
-                html.H4("Filtering by Country", style={
-                "color": "#AD180D"
-                }),
-                dcc.Dropdown(
-                    id="country-dropdown",
-                    options=[{"label": c, "value": c} for c in countries],
-                    placeholder="Select a country",
-                    multi=True,
-                    style={"margin-bottom": "10px"}
-                )
-            ], style={"margin-bottom": "20px"}),
-
-            html.Div([
-                html.H4("Filtering by Taxonomy", style={"color": "#AD180D"}),
-                dcc.Dropdown(id="kingdom-dropdown", placeholder="Select a kingdom", style={"margin-bottom": "10px"}),
-                dcc.Dropdown(id="phylum-dropdown", placeholder="Select a phylum", style={"margin-bottom": "10px"}),
-                dcc.Dropdown(id="class-dropdown", placeholder="Select a class", style={"margin-bottom": "10px"}),
-                dcc.Dropdown(id="order-dropdown", placeholder="Select an order", style={"margin-bottom": "10px"}),
-                dcc.Dropdown(id="family-dropdown", placeholder="Select a family", style={"margin-bottom": "10px"}),
-                dcc.Dropdown(id="specie-dropdown", placeholder="Select a species", style={"margin-bottom": "10px"}),
-            ], style={"margin-bottom": "20px"}),
-
-            html.Div([
-                html.H4("Filtering by Year", style={"color": "#AD180D"}),
-                dcc.Dropdown(
-                    id="year-dropdown",
-                    options=[{"label": year, "value": year} for year in unique_years],
-                    placeholder="Select one or more years",
-                    multi=True,
-                    style={"margin-bottom": "10px"}
-                )
-            ]),
-
-            html.Div([
-                html.H4("View Options", style={"color": "#AD180D"}),
-                dcc.Checklist(
-                    id="default-mode-checklist",
-                    options=[{"label": "Accumulated graph", "value": "default_mode"}],
-                    value=["default_mode"],
-                    labelStyle={'display': 'block', "margin-bottom": "5px"}
-                ),
-                dcc.Checklist(
-                    id="country-mode-checklist",
-                    options=[{"label": "Stacked chart by country", "value": "country_mode"}],
-                    labelStyle={"display": "block", "margin-bottom": "5px"}
-                ),
-                dcc.Checklist(
-                    id="year-mode-checklist",
-                    options=[{"label": "Stacked chart by year", "value": "year_mode"}],
-                    labelStyle={"display": "block", "margin-bottom": "5px"}
-                ),
-                dcc.Checklist(
-                    id="category-checklist",
-                    options=[{"label": "Stacked chart by risk category", "value": "category_mode"}],
-                    labelStyle={"display": "block", "margin-bottom": "5px"}
-                ),
-                html.H4("Value Options", style={"color": "#AD180D"}),
-                dcc.Checklist(
-                    id="absolute-mode-checklist",
-                    options=[{"label": "Absolute Values", "value": "absolute_mode"}],
-                    value=["absolute_mode"],
-                    labelStyle={'display': 'block', "margin-bottom": "5px"}
-                ),
-                dcc.Checklist(
-                    id="percentage-mode-checklist",
-                    options=[{"label": "Percentage Values", "value": "percentage_mode"}],
-                    labelStyle={"display": "block", "margin-bottom": "5px"}
-                )
-            ])
-        ], style={
-            "width": "30%",
-            "background-color": "#f9f9f9",
-            "padding": "0px 20px 20px 20px",
-            "border": "1px solid #ddd",
-            "border-radius": "5px",
-            "box-shadow": "2px 2px 5px #ccc"
-        }),
-
-        # Gráfico
-        dcc.Graph(
-            id="stacked-bar-chart",
-            style={
-                "height": "600px",
-                "width": "65%",
-                "border": "1px solid #ddd",
-                "border-radius": "5px",
-                "padding": "10px",
-                "background-color": "#ffffff",
-                "box-shadow": "2px 2px 5px #ccc"
-            }
-        )
-    ], style={
-        "display": "flex",
-        "flex-direction": "row",
-        "justify-content": "space-between",
-        "flex-wrap": "wrap", 
-        "align-items": "flex-start",
-        "margin": "20px auto",
-        "width": "90%",
-        "background-color": "rgb(250, 250, 250)",
-        "padding": "20px",
-        "border-radius": "10px"
-    }),
+		html.H1("Interactive Dashboards for Species Analysis", className="h1Title"),
+		html.Button("Species Use Chart", id="btn-species-use", className="btnMenu", n_clicks=0),
+		html.Button("Risk of Extinction Chart", id="btn-risk", className="btnMenu", n_clicks=0),
+		html.Button("Species Distribution Map", id="btn-map", className="btnMenu", n_clicks=0),
+	], style={
+	"height": "100vh",
+	"width": "15vw"
+	})
+    ], id="sidebar"),
     
-    # Caixa principal com filtros e gráfico
+    # Container para o conteúdo à direita do menu
     html.Div([
+        # Espaço para título
+        html.Div("Interactive Species Use Chart", className="title_div"),
+        # Espaço para conteúdo
         html.Div([
-            html.H2("Risk of Extinction of Species Over the Years", style={
-                "text-align": "center",
-                "color": "#AD180D",
-                "margin-bottom": "20px",
-                "font-size": "2.5em",
-                "font-weight": "bold",
-            })
-        ], style={"width": "100%"}),
-
-        html.Div([
-
             html.Div([
-                html.H4("Search for a Species", style={"color": "#DA2A1C",
-                                "font-size": "22px",
-                                "margin-bottom": "10px"}),
-                dcc.Input(
-                    id="species-input",
-                    type="text",
-                    placeholder="Type a scientific species name",
-                    style={"margin-bottom": "10px", "width": "80%", "padding": "8px"},
-                ),
-                html.Button(
-                    "Submit",
-                    id="submit-button",
-                    style={
-                        "background-color": "#DA2A1C",
-                        "color": "#fff",
-                        "border": "none",
-                        "padding": "10px 20px",
-                        "margin-top": "10px",
-                        "margin-left": "10px",
-                        "cursor": "pointer",
-                        "border-radius": "5px",
-                        "font-size": "16px"
-                    },
-                ),
-                html.Div(
-                    id="error-message",
-                    style={"color": "red", "margin-top": "10px", "font-size": "14px"}
-                )
-            ], style={"margin-bottom": "20px"})
-        ]
-        , style={
-            "width": "60%",
-            "background-color": "#f9f9f9",
-            "padding": "0px 20px 10px 20px",
-            "border": "1px solid #ddd",
-            "border-radius": "5px",
-            "box-shadow": "2px 2px 5px #ccc",
-            "margin-bottom": "10px"
-        }),
+		    html.Div([
+			    html.H3("Filters and Options", className="h3Filters"),
+			    html.Div([
+				html.H4("Filtering by Country", style={
+				"color": "#AD180D"
+				}),
+				dcc.Dropdown(
+				    id="country-dropdown",
+				    options=[{"label": c, "value": c} for c in countries],
+				    placeholder="Select a country",
+				    multi=True,
+				    className="dropdown"
+				)
+			    ], style={"margin-bottom": "20px"}),
+
+			    html.Div([
+				html.H4("Filtering by Taxonomy", style={"color": "#AD180D"}),
+				dcc.Dropdown(id="kingdom-dropdown", placeholder="Select a kingdom", className="dropdown"),
+				dcc.Dropdown(id="phylum-dropdown", placeholder="Select a phylum", className="dropdown"),
+				dcc.Dropdown(id="class-dropdown", placeholder="Select a class", className="dropdown"),
+				dcc.Dropdown(id="order-dropdown", placeholder="Select an order", className="dropdown"),
+				dcc.Dropdown(id="family-dropdown", placeholder="Select a family", className="dropdown"),
+				dcc.Dropdown(id="specie-dropdown", placeholder="Select a species", className="dropdown"),
+			    ], style={"margin-bottom": "20px"}),
+
+			    html.Div([
+				html.H4("Filtering by Year", style={"color": "#AD180D"}),
+				dcc.Dropdown(
+				    id="year-dropdown",
+				    options=[{"label": year, "value": year} for year in unique_years],
+				    placeholder="Select one or more years",
+				    multi=True,
+				    className="dropdown"
+				)
+			    ]),
+
+			    html.Div([
+				html.H4("View Options", style={"color": "#AD180D"}),
+				dcc.Checklist(
+				    id="default-mode-checklist",
+				    options=[{"label": "Accumulated graph", "value": "default_mode"}],
+				    value=["default_mode"],
+				    labelStyle={'display': 'block', "margin-bottom": "5px"}
+				),
+				dcc.Checklist(
+				    id="country-mode-checklist",
+				    options=[{"label": "Stacked chart by country", "value": "country_mode"}],
+				    labelStyle={"display": "block", "margin-bottom": "5px"}
+				),
+				dcc.Checklist(
+				    id="year-mode-checklist",
+				    options=[{"label": "Stacked chart by year", "value": "year_mode"}],
+				    labelStyle={"display": "block", "margin-bottom": "5px"}
+				),
+				dcc.Checklist(
+				    id="category-checklist",
+				    options=[{"label": "Stacked chart by risk category", "value": "category_mode"}],
+				    labelStyle={"display": "block", "margin-bottom": "5px"}
+				),
+				html.H4("Value Options", style={"color": "#AD180D"}),
+				dcc.Checklist(
+				    id="absolute-mode-checklist",
+				    options=[{"label": "Absolute Values", "value": "absolute_mode"}],
+				    value=["absolute_mode"],
+				    labelStyle={'display': 'block', "margin-bottom": "5px"}
+				),
+				dcc.Checklist(
+				    id="percentage-mode-checklist",
+				    options=[{"label": "Percentage Values", "value": "percentage_mode"}],
+				    labelStyle={"display": "block", "margin-bottom": "5px"}
+				)
+			    ])
+			], style={
+			    "width": "80%",
+			    "height": "85%",
+			    "background-color": "#f9f9f9",
+			    "padding": "0px 20px 20px 20px",
+			    "border": "1px solid #ddd",
+			    "border-radius": "5px",
+			    "box-shadow": "2px 2px 5px #ccc",
+			    "overflow": "auto",
+			})
+		], className="div_filters"),
 
         # Gráfico
-        dcc.Graph(
-            id="risk-graph",
-            style={
-                "height": "600px",
-                "width": "60%",
-                "border": "1px solid #ddd",
-                "border-radius": "5px",
-                "padding": "10px",
-                "background-color": "#ffffff",
-                "box-shadow": "2px 2px 5px #ccc"
-            }
-        )
-    ], style={
-        "display": "flex",
-        "flex-direction": "row",
-        "justify-content": "center",
-        "flex-wrap": "wrap", 
-        "align-items": "center",
-        "align-content": "center", 
-        "margin": "20px auto",
-        "width": "90%",
-        "background-color": "rgb(250, 250, 250)",
-        "padding": "20px",
-        "border-radius": "10px"
-    }),
+        html.Div([
+		dcc.Graph(
+		    id="stacked-bar-chart",
+		    style={
+		        "height": "85%",
+		        "width": "90%",
+		        "border": "1px solid #ddd",
+		        "border-radius": "5px",
+		        "padding": "10px",
+		        "background-color": "#ffffff",
+		        "box-shadow": "2px 2px 5px #ccc"
+		    }
+		)], className="use_div")
+	   
+	], className="content_div", id="content_uses"),
+    ], id="main-container1", className="main-container"),
     
     html.Div([
+        # Espaço para título
+        html.Div("Risk of Extinction of Species Over the Years", className="title_div"),
+        # Espaço para conteúdo
         html.Div([
-            html.H2("Species Distribution", style={
-                "text-align": "center",
-                "color": "#AD180D",
-                "margin-bottom": "20px",
-                "font-size": "2.5em",
-                "font-weight": "bold",
-            })
-        ], style={"width": "100%"}),
+        	html.Div([
+			html.Div([
+				html.H4("Search for a Species", className="h4Title"),
+				dcc.Input(
+				    id="species-input",
+				    type="text",
+				    placeholder="Type a scientific species name",
+				    style={
+					"margin-bottom": "10px",
+					"width": "80%",
+					"padding": "8px"
+				    },
+				),
+				html.Button(
+				    "Submit",
+				    id="submit-button",
+				    className="submitButton"
+				),
+				html.Div(
+				    id="error-message",
+				    style={
+					"color": "red",
+					"margin-top": "10px",
+					"font-size": "1em"
+				    }
+				)
+			    ], className="search_div")],
+			className="div_forms"),
 
+		    # Gráfico de risco
+		    html.Div([
+			    dcc.Graph(
+				id="risk-graph"
+			    )], className="graph")
+		    ], className="content_div"),
+    ], id="main-container2", className="main-container"),
+    
+    html.Div([
+        # Espaço para título
+        html.Div("Species Distribution Map", className="title_div"),
+        # Espaço para conteúdo
         html.Div([
+        	html.Div([
+			html.Div([
+				html.H4("Search for a Species", className="h4Title"),
+				dcc.Input(
+				    id="species-input2",
+				    type="text",
+				    placeholder="Type a scientific species name",
+				    style={
+					"margin-bottom": "10px",
+					"width": "80%",
+					"padding": "8px"
+				    },
+				),
+				html.Button(
+				    "Submit",
+				    id="submit-button2",
+				    className="submitButton"
+				),
+				html.Div(
+				    id="error-message2",
+				    style={
+					"color": "red",
+					"margin-top": "10px",
+					"font-size": "1em"
+				    }
+				)
+			    ], className="search_div")],
+			className="div_forms"),
 
-            html.Div([
-                html.H4("Search for a Species", style={"color": "#DA2A1C",
-                                "font-size": "22px",
-                                "margin-bottom": "10px"}),
-                dcc.Input(
-                    id="species-input2",
-                    type="text",
-                    placeholder="Type a scientific species name",
-                    style={"margin-bottom": "10px", "width": "80%", "padding": "8px"},
-                ),
-                html.Button(
-                    "Submit",
-                    id="submit-button2",
-                    style={
-                        "background-color": "#DA2A1C",
-                        "color": "#fff",
-                        "border": "none",
-                        "padding": "10px 20px",
-                        "margin-top": "10px",
-                        "margin-left": "10px",
-                        "cursor": "pointer",
-                        "border-radius": "5px",
-                        "font-size": "16px"
-                    },
-                ),
-                html.Div(
-                    id="error-message2",
-                    style={"color": "red", "margin-top": "10px", "font-size": "14px"}
-                )
-            ], style={"margin-bottom": "20px"})
-        ]
-        , style={
-            "width": "60%",
-            "background-color": "#f9f9f9",
-            "padding": "0px 20px 10px 20px",
-            "border": "1px solid #ddd",
-            "border-radius": "5px",
-            "box-shadow": "2px 2px 5px #ccc",
-            "margin-bottom": "10px"
-        }),
+		    # Gráfico de risco
+		    html.Div([
+			    dcc.Graph(
+				id="distribution-map"
+			    )], className="graph")
+		    ], className="content_div"),
+    ], id="main-container3", className="main-container"),
+], style={
+    "display": "flex",
+    "width": "100vw",
+    "height": "100vh",
+    "overflow": "hidden",  # Previne rolagem da página
+    "font-family": "Lato"
+})
 
-        # Gráfico
-        dcc.Graph(
-            id="distribution-map",
-            style={
-                "height": "600px",
-                "width": "60%",
-                "border": "1px solid #ddd",
-                "border-radius": "5px",
-                "padding": "10px",
-                "background-color": "#ffffff",
-                "box-shadow": "2px 2px 5px #ccc"
-            }
-        )
-    ], style={
-        "display": "flex",
-        "flex-direction": "row",
-        "justify-content": "center",
-        "flex-wrap": "wrap", 
-        "align-items": "center",
-        "align-content": "center", 
-        "margin": "20px auto",
-        "width": "90%",
-        "background-color": "rgb(250, 250, 250)",
-        "padding": "20px",
-        "border-radius": "10px"
-    }),
+@app.callback(
+    [Output("main-container1", "style"),
+     Output("main-container2", "style"),
+     Output("main-container3", "style")],
+    [Input("btn-species-use", "n_clicks"),
+     Input("btn-risk", "n_clicks"),
+     Input("btn-map", "n_clicks")]
+)
+def toggle_content(btn_species_use, btn_risk, btn_map):
+    # Determina qual botão foi clicado
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        button_id = "btn-species-use"  # Default
+    else:
+        button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
-    # Rodapé
-    html.Div([], style={
-        "background-color": "#AD180D",
-        "height": "50px",
-        "border-top": "2px solid #DA2A1C"
-    })
-], style={"font-family": "Arial, sans-serif", "background-color": "#fff", "margin": "0 auto"})
+    # Define estilos baseados no botão clicado
+    styles = {
+        "btn-species-use": [
+            {"display": "flex"},  # Mostra Species Use Chart
+            {"display": "none"},
+            {"display": "none"}
+        ],
+        "btn-risk": [
+            {"display": "none"},
+            {"display": "flex"},  # Mostra Risk Chart
+            {"display": "none"}
+        ],
+        "btn-map": [
+            {"display": "none"},
+            {"display": "none"},
+            {"display": "flex"}  # Mostra Map
+        ],
+    }
+
+    return styles.get(button_id, [{"display": "flex"}, {"display": "none"}, {"display": "none"}])
 
 
 def filter_dataframe_by_specie(df, specie):
@@ -610,7 +520,8 @@ def update_graph(n_clicks, n_submit, input_value):
                              mode='lines',
                              line=dict(color='darkred'),
                              name=input_value))
-    fig.update_layout(xaxis_title='Years',
+    fig.update_layout(autosize=True,
+    	              xaxis_title='Years',
                       yaxis_title='Risk Category',
                       yaxis_range=[0,8],
                       yaxis=dict(tickmode='array',
@@ -645,7 +556,9 @@ def update_map(n_clicks, n_submit, input_value):
     )
     # title_text='Distribuição da espécie ' + input_value,
     fig.update_layout(
+    	autosize=True,
         showlegend = False,
+        margin=dict(l=0, r=0, t=0, b=0),
         geo=dict(
             showframe=False,
             showcoastlines=False,
@@ -653,13 +566,7 @@ def update_map(n_clicks, n_submit, input_value):
             projection_type='equirectangular',
             fitbounds="geojson",
         ),
-        annotations = [dict(
-            x=0.55,
-            y=0.1,
-            xref='paper',
-            yref='paper',
-            showarrow = False
-        )]
+        annotations = []
     )
     return fig, ""
 
