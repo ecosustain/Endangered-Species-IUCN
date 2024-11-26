@@ -181,7 +181,7 @@ def create_dataframe_countries_by_id(dataframe: pd.DataFrame, unique_ids: list) 
     
 
 def main():
-    json_file = 'assessements.json'
+    json_file = '../data/assessments.json'
     dataframe = json_to_dataframe(json_file) # Read Assessments
     dataframe = clean_assessments(dataframe)
     unique_ids = list(dataframe['taxon.sis_id'].unique())

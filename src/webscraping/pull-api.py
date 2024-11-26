@@ -3,7 +3,12 @@ from requests import get
 from time import sleep
 from json import dumps
 
-with open("next2.txt", 'r') as f:
+AUTH_TOKEN = "" #authorization token for API
+ID_LIST_FILE = ""
+THREAD_COUNT = 16
+
+
+with open(ID_LIST_FILE, 'r') as f:
     l = f.read().split("\n")
     species = [int(i.strip()) for i in l]
     #print(len(species))
@@ -22,8 +27,9 @@ def wait_timeout(thread_id, formatted_list):
     write_to_file(thread_id, formatted_list)
 
     sleep(60)
+    #random url just to test if timeout has ended and we can fetch the API again
     url = f"https://api.iucnredlist.org/api/v4/taxa/sis/49830106"
-    headers = {"Authorization":"usQmjxan8iYDT9G1ipd2A5QTKzSq2yWrBihC"}
+    headers = {"Authorization":AUTH_TOKEN}
     response = get(url, headers=headers)
     return int(response.status_code) == 200
 
@@ -41,7 +47,7 @@ def formatted_json(response):
 
 def thread_func(start, end, result, idx):
     j = 0
-    headers = {"Authorization":"usQmjxan8iYDT9G1ipd2A5QTKzSq2yWrBihC"}
+    headers = {"Authorization":AUTH_TOKEN}
 
     formatted_list = []
     i = start
@@ -77,10 +83,10 @@ def thread_func(start, end, result, idx):
             response = get(url, headers=headers)
             if int(response.status_code) != 200:
                 print(response.status_code)
-                r = chill_out(idx, formatted_list)
+                r = wait_timeout(idx, formatted_list)
                 if not r:
                     result[idx] = j
-                    print("1 min nao foi suficiente")
+                    print("1 min was not long enough")
                     return  
                 formatted_list = []
                 if int(response.status_code) == 404:
@@ -98,14 +104,13 @@ def thread_func(start, end, result, idx):
 
 
 n = len(species)
-thread_count = 16
 threads = []
-result = [0 for i in range(thread_count)]
-for i in range(thread_count):
-    threads.append(Thread(target=thread_func,args=(int(i * n / thread_count), int((i+1) * n / thread_count), result, i)))
+result = [0 for i in range(THREAD_COUNT)]
+for i in range(THREAD_COUNT):
+    threads.append(Thread(target=thread_func,args=(int(i * n / THREAD_COUNT), int((i+1) * n / THREAD_COUNT), result, i)))
     threads[i].start()
 
-for i in range(thread_count):
+for i in range(THREAD_COUNT):
     threads[i].join()
 
 print(result)
