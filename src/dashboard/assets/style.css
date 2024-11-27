@@ -3,6 +3,14 @@ body {
     display: flex;
 }
 
+#div_body {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;  
+    font-family: Lato;
+}
+
 #sidebar {
     height: 100vh;
     width: 18vw;
@@ -11,6 +19,11 @@ body {
     flex-direction: column;
     align-items: center;
     position: fixed;
+}
+
+#sidebar-content {
+    height: 100vh;
+    width: 15vw;
 }
 
 .h1Title {
@@ -38,7 +51,6 @@ body {
     color: #FFFFFF;
     font-size: 2.8em;
     font-weight: bold;
-    /*text-shadow: 0.5px 0.5px #ddd;*/
     letter-spacing: 1px;
     font-style: italic;
 }
@@ -99,6 +111,7 @@ body {
     background-color: #f9f9f9;
     padding-left: 20px;
     padding-right: 20px;
+    padding-bottom: 2vh;
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 2px 2px 5px #ccc;
@@ -138,6 +151,17 @@ body {
     justify-content: center; 
 }
 
+#use_chart_div {
+    width: 80%;
+    height: 85%;
+    background-color: #f9f9f9;
+    padding: 0px 20px 20px 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px #ccc;
+    overflow: auto;
+}
+
 .h3Filters {
     color: #DA2A1C;
     font-size: 1.4em;
@@ -160,6 +184,22 @@ body {
     justify-content: center; 
 }
 
+#stacked-bar-chart {
+    height: 85%;
+    width: 90%;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;  
+    background-color: #ffffff;
+    box-shadow: 2px 2px 5px #ccc;
+}
+
+.search-input {
+    margin-bottom: 10px;
+    width: 80%;
+    padding: 8px;
+}
+
 #main-container2 {
     display: none;
     flex-direction: column;
@@ -168,14 +208,15 @@ body {
     justify-content: center; 
 }
 
+.error-message {
+    color: red;
+    font-size: 1em;
+}
+
 #risk-graph {
     height: 100%; 
     width: 90%;
     background-color: #ffffff;
-    /*border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
-    box-shadow: 2px 2px 5px #ccc;*/
 }
 
 #main-container3 {

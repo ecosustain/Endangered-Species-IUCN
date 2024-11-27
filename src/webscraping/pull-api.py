@@ -11,11 +11,8 @@ THREAD_COUNT = 16
 with open(ID_LIST_FILE, 'r') as f:
     l = f.read().split("\n")
     species = [int(i.strip()) for i in l]
-    #print(len(species))
 
 taxon_keys = ["scientific_name","sis_id","kingdom_name","phylum_name","class_name","order_name","family_name"]
-
-#print(species)
 
 def write_to_file(thread_id, formatted_list):
     with open(f"{thread_id}.json", "a+") as file:
@@ -79,7 +76,6 @@ def thread_func(start, end, result, idx):
         k = 0
         while k < m:
             url = f"https://api.iucnredlist.org/api/v4/assessment/{assessment_list[k]}"
-            #print(k)
             response = get(url, headers=headers)
             if int(response.status_code) != 200:
                 print(response.status_code)
@@ -96,7 +92,6 @@ def thread_func(start, end, result, idx):
             formatted_list.append(formatted_json(response.json()))
             j += 1
             k += 1
-        #print(i)
         i += 1
     result[idx] = j
     write_to_file(idx, formatted_list)

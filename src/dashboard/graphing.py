@@ -42,7 +42,7 @@ def add_bar(fig, x_values: list, y_values: list, name: str) -> None:
             ))
     
 
-def create_bars(fig, all_uses: list, dict_uses: dict, list_selected_items: list, total: int, percentage_mode: bool):
+def create_bars(fig, all_uses: list, dict_uses: dict, list_selected_items: list, total: int, percentage_mode: bool, years_mode=False):
     """
     Creates bars in figure for species usage barplot
     
@@ -62,7 +62,10 @@ def create_bars(fig, all_uses: list, dict_uses: dict, list_selected_items: list,
         usage_counts = dict_uses[item]
         values = [usage_counts.get(use, 0) for use in all_uses]
         x_list = calculate_values_per_mode(values, total, percentage_mode)
-        add_bar(fig, x_list, all_uses, item)
+        if years_mode:
+            add_bar(fig, x_list, all_uses, str(int(item)))
+        else:
+            add_bar(fig, x_list, all_uses, item)
         
 def create_figure_with_bar(dict_counts: dict, percentage_mode: bool):
     """
@@ -112,7 +115,7 @@ def update_graph_country(selected_specie, selected_family, selected_order, selec
             total_by_use[use] += usage_counts[use]
             total += usage_counts[use]
 
-    return dict_country_uses, total
+    return selected_countries, dict_country_uses, total
 
 def update_graph_year(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use):
@@ -125,15 +128,15 @@ def update_graph_year(selected_specie, selected_family, selected_order, selected
     dict_year_uses = {}
     total = 0 
     if selected_years is None:
-            selected_years = filter_years(dataframe, countries_dataframe, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
+        selected_years = filter_years(dataframe, countries_dataframe, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
 
     if selected_countries:
-        ids = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].unique())
-        filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
+    	ids = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].unique())
+    	filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
     filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_specie)    
-        
+    
     for year in selected_years:
-        years_dataframe = filter_some_years(filtered_df, [str(year)])
+        years_dataframe = filter_some_years(filtered_df, [year])
         ids = list(years_dataframe['taxon.sis_id'].unique())
         temp_df = filtered_df[filtered_df['taxon.sis_id'].isin(ids)]
         usage_counts = generate_uses_count(temp_df, uses_dataframe)
@@ -143,7 +146,7 @@ def update_graph_year(selected_specie, selected_family, selected_order, selected
             total_by_use[use] += usage_counts[use]
             total += usage_counts[use]
 
-    return dict_year_uses, total
+    return selected_years, dict_year_uses, total
 
 def update_graph_risk(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use):
@@ -164,7 +167,7 @@ def update_graph_risk(selected_specie, selected_family, selected_order, selected
     dict_categories = {}
     total = 0
     for category in unique_categories:
-        temp_dataframe = filtered_df[filtered_df["red_list_category"] == category]
+        temp_dataframe = filtered_df[filtered_df["risk_category"] == category]
         usage_counts = generate_uses_count(temp_dataframe, uses_dataframe)
         dict_categories[category] = usage_counts
         

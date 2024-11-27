@@ -5,10 +5,12 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 import plotly.express as px
 import geopandas as gpd
-#import matplotlib.pyplot as plt
 import datetime
 import os
 import gc
+
+def clean_input(input_string: str) -> str:
+    return ' '.join(input_string.strip().split())
 
 def filter_dataframe_by_specie(df, specie):
     """
@@ -131,21 +133,19 @@ def filter_years(dataframe, countries_dataframe, selected_specie, selected_famil
                   (dataframe["taxon.order_name"] == selected_order) &
                   (dataframe["taxon.family_name"] == selected_family) &
                   (dataframe["taxon.scientific_name"] == selected_specie)]["taxon.sis_id"].dropna().unique())
-    #ids_countries = []
     if selected_countries:
         ids_countries = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].dropna().unique())
     if selected_countries and selected_kingdom:    
         ids = list(set(ids_countries) & set(ids_species))
-        species = list(dataframe[dataframe["taxon.sis_id"].isin(ids)]["year_published"].dropna().unique())
+        filtered_years = list(dataframe[dataframe["taxon.sis_id"].isin(ids)]["year_published"].dropna().unique())
     elif selected_kingdom:
-        species = list(dataframe[dataframe["taxon.sis_id"].isin(ids_species)]["year_published"].dropna().unique())
+        filtered_years = list(dataframe[dataframe["taxon.sis_id"].isin(ids_species)]["year_published"].dropna().unique())
     elif selected_countries:
-        species = list(dataframe[dataframe["taxon.sis_id"].isin(ids_countries)]["year_published"].dropna().unique())
+        filtered_years = list(dataframe[dataframe["taxon.sis_id"].isin(ids_countries)]["year_published"].dropna().unique())
     else: 
-        species = list(dataframe["year_published"].dropna().unique())
-        #print(species)
-    species.sort()
-    return species
+        filtered_years = list(dataframe["year_published"].dropna().unique())
+    filtered_years.sort()
+    return filtered_years
     
 
 def filter_some_years(dataframe: pd.DataFrame, list_years: list) -> pd.DataFrame:
@@ -237,6 +237,10 @@ def read_shapefiles(base_dir):
     
     # Colunas que você deseja manter
     columns_to_keep = ["sci_name", "geometry"]  # Inclua 'geometry' para manter a geometria
+    #file_path = os.path.join(shapefiles_dir, 'FW_FISH_PART1.shp')
+    #gdf =  gpd.read_file(file_path, encoding='utf-8')
+    #gdf = gdf[columns_to_keep]
+    #return gdf
 
     # Percorrer todos os arquivos no diretório
     for file in os.listdir(shapefiles_dir):
@@ -262,5 +266,6 @@ countries_dataframe = pd.read_csv(os.path.join(base_dir, "../../data/countries.c
 unique_ids = list(dataframe['taxon.sis_id'].unique())
 unique_years = create_list_unique_years(dataframe)
 countries = list(countries_dataframe["Country"].unique())
-unique_categories = list(dataframe["risk_category"].dropna().unique())
+unique_categories = ["NE", "LC", "LT", "VU", "EN", "CR", "RE", "EW", "EX"]
+#unique_categories = list(dataframe["risk_category"].dropna().unique())
 species = list(dataframe['taxon.scientific_name'].unique())

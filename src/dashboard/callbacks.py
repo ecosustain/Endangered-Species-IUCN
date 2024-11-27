@@ -14,24 +14,17 @@ app = Dash(__name__, external_stylesheets=[
 ])
 
 app.layout = html.Div([
-    # Menu lateral
     html.Div([
     	html.Div([
 		html.H1("Interactive Dashboards for Species Analysis", className="h1Title"),
 		html.Button("Species Use Chart", id="btn-species-use", className="btnMenu", n_clicks=0),
 		html.Button("Risk of Extinction Chart", id="btn-risk", className="btnMenu", n_clicks=0),
 		html.Button("Species Distribution Map", id="btn-map", className="btnMenu", n_clicks=0),
-	], style={
-	"height": "100vh",
-	"width": "15vw"
-	})
+	], id="sidebar-content")
     ], id="sidebar"),
     
-    # Container para o conteúdo à direita do menu
     html.Div([
-        # Espaço para título
         html.Div("Interactive Species Use Chart", className="title_div"),
-        # Espaço para conteúdo
         html.Div([
             html.Div([
 		    html.Div([
@@ -106,53 +99,28 @@ app.layout = html.Div([
 				    labelStyle={"display": "block", "margin-bottom": "5px"}
 				)
 			    ])
-			], style={
-			    "width": "80%",
-			    "height": "85%",
-			    "background-color": "#f9f9f9",
-			    "padding": "0px 20px 20px 20px",
-			    "border": "1px solid #ddd",
-			    "border-radius": "5px",
-			    "box-shadow": "2px 2px 5px #ccc",
-			    "overflow": "auto",
-			})
+			], id="use_chart_div")
 		], className="div_filters"),
 
-        # Gráfico
         html.Div([
 		dcc.Graph(
-		    id="stacked-bar-chart",
-		    style={
-		        "height": "85%",
-		        "width": "90%",
-		        "border": "1px solid #ddd",
-		        "border-radius": "5px",
-		        "padding": "10px",
-		        "background-color": "#ffffff",
-		        "box-shadow": "2px 2px 5px #ccc"
-		    }
-		)], className="use_div")
+		    id="stacked-bar-chart")
+		 ], className="use_div")
 	   
 	], className="content_div", id="content_uses"),
     ], id="main-container1", className="main-container"),
     
     html.Div([
-        # Espaço para título
         html.Div("Risk of Extinction of Species Over the Years", className="title_div"),
-        # Espaço para conteúdo
         html.Div([
         	html.Div([
 			html.Div([
 				html.H4("Search for a Species", className="h4Title"),
 				dcc.Input(
 				    id="species-input",
+				    className="search-input",
 				    type="text",
 				    placeholder="Type a scientific species name",
-				    style={
-					"margin-bottom": "10px",
-					"width": "80%",
-					"padding": "8px"
-				    },
 				),
 				html.Button(
 				    "Submit",
@@ -161,16 +129,11 @@ app.layout = html.Div([
 				),
 				html.Div(
 				    id="error-message",
-				    style={
-					"color": "red",
-					"margin-top": "10px",
-					"font-size": "1em"
-				    }
+				    className="error-message",
 				)
 			    ], className="search_div")],
 			className="div_forms"),
 
-		    # Gráfico de risco
 		    html.Div([
 			    dcc.Graph(
 				id="risk-graph"
@@ -179,22 +142,16 @@ app.layout = html.Div([
     ], id="main-container2", className="main-container"),
     
     html.Div([
-        # Espaço para título
         html.Div("Species Distribution Map", className="title_div"),
-        # Espaço para conteúdo
         html.Div([
         	html.Div([
 			html.Div([
 				html.H4("Search for a Species", className="h4Title"),
 				dcc.Input(
 				    id="species-input2",
+				    className="search-input",
 				    type="text",
 				    placeholder="Type a scientific species name",
-				    style={
-					"margin-bottom": "10px",
-					"width": "80%",
-					"padding": "8px"
-				    },
 				),
 				html.Button(
 				    "Submit",
@@ -203,29 +160,18 @@ app.layout = html.Div([
 				),
 				html.Div(
 				    id="error-message2",
-				    style={
-					"color": "red",
-					"margin-top": "10px",
-					"font-size": "1em"
-				    }
+				    className="error-message",
 				)
 			    ], className="search_div")],
 			className="div_forms"),
 
-		    # Gráfico de risco
 		    html.Div([
 			    dcc.Graph(
 				id="distribution-map"
 			    )], className="graph")
 		    ], className="content_div"),
     ], id="main-container3", className="main-container"),
-], style={
-    "display": "flex",
-    "width": "100vw",
-    "height": "100vh",
-    "overflow": "hidden",  # Previne rolagem da página
-    "font-family": "Lato"
-})
+], id="div_body")
 
 @app.callback(
     [Output("main-container1", "style"),
@@ -241,29 +187,27 @@ def toggle_content(btn_species_use, btn_risk, btn_maps):
 
     """
 
-    # Determina qual botão foi clicado
     ctx = dash.callback_context
     if not ctx.triggered:
         button_id = "btn-species-use"  # Default
     else:
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
-    # Define estilos baseados no botão clicado
     styles = {
         "btn-species-use": [
-            {"display": "flex"},  # Mostra Species Use Chart
+            {"display": "flex"}, 
             {"display": "none"},
             {"display": "none"}
         ],
         "btn-risk": [
             {"display": "none"},
-            {"display": "flex"},  # Mostra Risk Chart
+            {"display": "flex"},  
             {"display": "none"}
         ],
         "btn-map": [
             {"display": "none"},
             {"display": "none"},
-            {"display": "flex"}  # Mostra Map
+            {"display": "flex"}  
         ],
     }
 
@@ -290,6 +234,8 @@ def update_status_graph(n_clicks, n_submit, input_value):
     """
     if input_value is None or input_value.strip() == "":
         return dash.no_update, ""
+        
+    input_value = clean_input(input_value)
 
     if input_value not in species:
         return dash.no_update, f"Error: '{input_value}' is not a valid species."
@@ -340,6 +286,8 @@ def update_map(n_clicks, n_submit, input_value):
     """
     if input_value is None or input_value.strip() == "":
         return dash.no_update, ""
+        
+    input_value = clean_input(input_value)
 
     if input_value not in species:
         return dash.no_update, f"Error: '{input_value}' is not a valid species."
@@ -354,7 +302,6 @@ def update_map(n_clicks, n_submit, input_value):
         color_discrete_map= {input_value:'#871108'},
         color='sci_name',
     )
-    # title_text='Distribuição da espécie ' + input_value,
     fig.update_layout(
     	autosize=True,
         showlegend = False,
@@ -533,7 +480,7 @@ def update_graph(selected_specie, selected_family, selected_order, selected_clas
     total = 0
     all_uses = list(total_by_use.keys())
     if country_mode:
-        dict_country_uses, total = update_graph_country(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+        selected_countries, dict_country_uses, total = update_graph_country(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
                                                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
         # Calcular os percentuais para cada país
         create_bars(fig, all_uses, dict_country_uses, selected_countries, total, percentage_mode)
@@ -543,10 +490,8 @@ def update_graph(selected_specie, selected_family, selected_order, selected_clas
             update_fig_layout(fig, "Species Use by Country", "Count", "Categories")
 
     elif year_mode:
-        dict_year_uses, total = update_graph_year(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
-                                           selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
-        # Calcular os percentuais para cada país
-        create_bars(fig, all_uses, dict_year_uses, selected_years, total, percentage_mode)
+        selected_years, dict_year_uses, total = update_graph_year(selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
+        create_bars(fig, all_uses, dict_year_uses, selected_years, total, percentage_mode, years_mode=True)
 
         if percentage_mode:
             update_fig_layout(fig, "Species Use by Year", "Percentage (%)", "Categories")
