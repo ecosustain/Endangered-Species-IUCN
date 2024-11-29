@@ -11,7 +11,7 @@ from graphing import *
 
 app = Dash(__name__, url_base_pathname='/endangered-species/', external_stylesheets=[
     "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Lato:wght@400;700&display=swap"
-])
+],url_base_pathname='/endangered-species/')
 
 app.layout = html.Div([
     html.Div([
@@ -35,7 +35,7 @@ app.layout = html.Div([
 				}),
 				dcc.Dropdown(
 				    id="country-dropdown",
-				    options=[{"label": c, "value": c} for c in countries],
+				    options=[{"label": c, "value": c} for c in UNIQUE_COUNTRIES],
 				    placeholder="Select a country",
 				    multi=True,
 				    className="dropdown"
@@ -56,7 +56,7 @@ app.layout = html.Div([
 				html.H4("Filtering by Year", style={"color": "#AD180D"}),
 				dcc.Dropdown(
 				    id="year-dropdown",
-				    options=[{"label": year, "value": year} for year in unique_years],
+				    options=[{"label": year, "value": year} for year in UNIQUE_YEARS],
 				    placeholder="Select one or more years",
 				    multi=True,
 				    className="dropdown"
@@ -173,6 +173,7 @@ app.layout = html.Div([
     ], id="main-container3", className="main-container"),
 ], id="div_body")
 
+# Muitos das funções de callback contém argumentos inutilizados, porém eles são necessários para o funcionamento dos decoradores (demarcados com @)
 @app.callback(
     [Output("main-container1", "style"),
      Output("main-container2", "style"),
@@ -237,7 +238,7 @@ def update_status_graph(n_clicks, n_submit, input_value):
         
     input_value = clean_input(input_value)
 
-    if input_value not in species:
+    if input_value not in UNIQUE_SPECIES:
         return dash.no_update, f"Error: '{input_value}' is not a valid species."
 
     status_enum = {'No Risk Data': 0,
@@ -250,7 +251,7 @@ def update_status_graph(n_clicks, n_submit, input_value):
             'Extinct in the Wild': 7,
             'Extinct': 8}
     fig = go.Figure()
-    df_plot = filter_dataframe_by_specie(dataframe, input_value)
+    df_plot = filter_dataframe_by_specie(ASSESSMENT_DATAFRAME, input_value)
     fig.add_trace(go.Scatter(x=df_plot['Years'], y=df_plot['categoriaOrdem'],
                              mode='lines',
                              line=dict(color='darkred'),
@@ -289,8 +290,8 @@ def update_map(n_clicks, n_submit, input_value):
         
     input_value = clean_input(input_value)
 
-    if input_value not in species:
-        return dash.no_update, f"Error: '{input_value}' is not a valid species."
+    if input_value not in UNIQUE_SPECIES:
+        return dash.no_update, f"Error: '{input_value}' is not a valid UNIQUE_SPECIES."
 
     filtered_gdf = gdf[gdf['sci_name'] == input_value]
     filtered_gdf['id'] = filtered_gdf.index
@@ -370,7 +371,7 @@ def update_values_mode_checklists(absolute_value, percentage_value):
 def update_kingdom_options(selected_countries):
     #if not selected_countries:
         #return []
-    kingdoms = dataframe["taxon.kingdom_name"].unique()
+    kingdoms = ASSESSMENT_DATAFRAME["taxon.kingdom_name"].unique()
     return [{"label": k, "value": k} for k in kingdoms]
 
 # Callbacks para atualizar os dropdowns sequencialmente (reino, filo, classe, ordem, família)
@@ -381,7 +382,7 @@ def update_kingdom_options(selected_countries):
 def update_phylum_options(selected_kingdom, selected_countries):
     if not selected_kingdom:
         return []
-    phyla = dataframe[dataframe["taxon.kingdom_name"] == selected_kingdom]["taxon.phylum_name"].unique()
+    phyla = ASSESSMENT_DATAFRAME[ASSESSMENT_DATAFRAME["taxon.kingdom_name"] == selected_kingdom]["taxon.phylum_name"].unique()
     return [{"label": p, "value": p} for p in phyla]
 
 @app.callback(
@@ -391,8 +392,8 @@ def update_phylum_options(selected_kingdom, selected_countries):
 def update_class_options(selected_phylum, selected_kingdom):
     if selected_phylum is None:
         return []
-    classes = dataframe[(dataframe["taxon.kingdom_name"] == selected_kingdom) & 
-                 (dataframe["taxon.phylum_name"] == selected_phylum)]["taxon.class_name"].unique()
+    classes = ASSESSMENT_DATAFRAME[(ASSESSMENT_DATAFRAME["taxon.kingdom_name"] == selected_kingdom) & 
+                 (ASSESSMENT_DATAFRAME["taxon.phylum_name"] == selected_phylum)]["taxon.class_name"].unique()
     return [{"label": c, "value": c} for c in classes]
 
 @app.callback(
@@ -402,9 +403,10 @@ def update_class_options(selected_phylum, selected_kingdom):
 def update_order_options(selected_class, selected_phylum, selected_kingdom):
     if selected_class is None:
         return []
-    orders = dataframe[(dataframe["taxon.kingdom_name"] == selected_kingdom) & 
-                (dataframe["taxon.phylum_name"] == selected_phylum) &
-                (dataframe["taxon.class_name"] == selected_class)]["taxon.order_name"].unique()
+    df = ASSESSMENT_DATAFRAME
+    orders = df[(df["taxon.kingdom_name"] == selected_kingdom) & 
+                (df["taxon.phylum_name"] == selected_phylum) &
+                (df["taxon.class_name"] == selected_class)]["taxon.order_name"].unique()
     return [{"label": o, "value": o} for o in orders]
 
 @app.callback(
@@ -414,10 +416,11 @@ def update_order_options(selected_class, selected_phylum, selected_kingdom):
 def update_family_options(selected_order, selected_class, selected_phylum, selected_kingdom):
     if selected_order is None:
         return []
-    families = dataframe[(dataframe["taxon.kingdom_name"] == selected_kingdom) & 
-                  (dataframe["taxon.phylum_name"] == selected_phylum) &
-                  (dataframe["taxon.class_name"] == selected_class) &
-                  (dataframe["taxon.order_name"] == selected_order)]["taxon.family_name"].unique()
+    df = ASSESSMENT_DATAFRAME
+    families = df[(df["taxon.kingdom_name"] == selected_kingdom) & 
+                  (df["taxon.phylum_name"] == selected_phylum) &
+                  (df["taxon.class_name"] == selected_class) &
+                  (df["taxon.order_name"] == selected_order)]["taxon.family_name"].unique()
     return [{"label": f, "value": f} for f in families]
 
 @app.callback(
@@ -427,11 +430,12 @@ def update_family_options(selected_order, selected_class, selected_phylum, selec
 def update_specie_options(selected_family, selected_order, selected_class, selected_phylum, selected_kingdom):
     if selected_family is None:
         return []
-    species = dataframe[(dataframe["taxon.kingdom_name"] == selected_kingdom) & 
-                  (dataframe["taxon.phylum_name"] == selected_phylum) &
-                  (dataframe["taxon.class_name"] == selected_class) &
-                  (dataframe["taxon.order_name"] == selected_order) &
-                  (dataframe["taxon.family_name"] == selected_family)]["taxon.scientific_name"].unique()
+    df = ASSESSMENT_DATAFRAME
+    species = df[(df["taxon.kingdom_name"] == selected_kingdom) & 
+                  (df["taxon.phylum_name"] == selected_phylum) &
+                  (df["taxon.class_name"] == selected_class) &
+                  (df["taxon.order_name"] == selected_order) &
+                  (df["taxon.family_name"] == selected_family)]["taxon.scientific_name"].unique()
     return [{"label": f, "value": f} for f in species]
 
 @app.callback(
@@ -441,8 +445,8 @@ def update_specie_options(selected_family, selected_order, selected_class, selec
      Input("class-dropdown", "value"), Input("phylum-dropdown", "value"),
      Input("kingdom-dropdown", "value"), Input("country-dropdown", "value")]
 )
-def update_years_options(selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries):
-    years = filter_years(dataframe, countries_dataframe, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
+def update_years_options(selected_species, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries):
+    years = filter_years(ASSESSMENT_DATAFRAME, COUNTRIES_DATAFRAME, selected_species, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
     return [{"label": f, "value": f} for f in years]
 
 
@@ -457,14 +461,14 @@ def update_years_options(selected_specie, selected_family, selected_order, selec
      Input("country-mode-checklist", "value"), Input("year-mode-checklist", "value"), 
      Input("percentage-mode-checklist", "value"), Input("category-checklist", "value")]
 )
-def update_graph(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+def update_graph(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, country_mode, year_mode, percentage_mode, category_mode):
     """
-        Updates barplot according to a selection of years, countries and species (or other taxonomic rank - see parameters)
+        Updates barplot according to a selection of years, UNIQUE_COUNTRIES and species (or other taxonomic rank - see parameters)
 
     """
     
-    filtered_df = dataframe.copy()
+    filtered_df = ASSESSMENT_DATAFRAME.copy()
     fig = go.Figure()
     total_by_use = {'Food': 0,
                     'Pets/display animals, horticulture': 0,
@@ -479,56 +483,52 @@ def update_graph(selected_specie, selected_family, selected_order, selected_clas
                     'Research': 0}
     total = 0
     all_uses = list(total_by_use.keys())
+    title = ""
     if country_mode:
-        selected_countries, dict_country_uses, total = update_graph_country(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+        selected_countries, dict_country_uses, total = update_graph_country(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                                                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
         # Calcular os percentuais para cada país
         create_bars(fig, all_uses, dict_country_uses, selected_countries, total, percentage_mode)
-        if percentage_mode:
-            update_fig_layout(fig, "Species Use by Country", "Percentage (%)", "Categories")
-        else:
-            update_fig_layout(fig, "Species Use by Country", "Count", "Categories")
-
+        title = "Species Use by Country"
+        
     elif year_mode:
-        selected_years, dict_year_uses, total = update_graph_year(selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
+        selected_years, dict_year_uses, total = update_graph_year(selected_species, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
+        
         create_bars(fig, all_uses, dict_year_uses, selected_years, total, percentage_mode, years_mode=True)
+        title = "Species Use by Year"
 
-        if percentage_mode:
-            update_fig_layout(fig, "Species Use by Year", "Percentage (%)", "Categories")
-        else:
-            update_fig_layout(fig, "Species Use by Year", "Count", "Categories")
+
     elif category_mode:
-        dict_categories, total = update_graph_risk(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+        dict_categories, total = update_graph_risk(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
-        create_bars(fig, all_uses, dict_categories, unique_categories, total, percentage_mode)
-        if percentage_mode:
-            update_fig_layout(fig, "Use of Species by Risk Category", "Percentage (%)", "Categories")
-        else:
-            update_fig_layout(fig, "Use of Species by Risk Category", "Count", "Categories")
+        
+        create_bars(fig, all_uses, dict_categories, UNIQUE_CATEGORIES, total, percentage_mode)
+        title = "Species Use by Risk Category"
         
     else:   
         if selected_countries:
-            ids = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].unique())
+            ids = list(COUNTRIES_DATAFRAME[COUNTRIES_DATAFRAME['Country'].isin(selected_countries)]['ID'].unique())
             filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
-        filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_specie)
+        filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_species)
         if selected_years:
             years_dataframe = filter_some_years(filtered_df, selected_years)
             ids = list(years_dataframe['taxon.sis_id'].unique())
             filtered_df = filtered_df[filtered_df['taxon.sis_id'].isin(ids)]
 
         # Contar o número de espécies por categoria de uso
-        usage_counts = generate_uses_count(filtered_df, uses_dataframe)
+        usage_counts = generate_uses_count(filtered_df, USES_DATAFRAME)
         for use in usage_counts.keys():
             total_by_use[use] += usage_counts[use]
             total += usage_counts[use]
 
         fig = create_figure_with_bar(total_by_use, percentage_mode)
+        title = "Species Use"
         
-        if percentage_mode:
-            update_fig_layout(fig, "Use of Species", "Percentage (%)", "Categories")
-        else:
-            update_fig_layout(fig, "Use of Species", "Count", "Categories")
-    
+    if percentage_mode:
+        update_fig_layout(fig, title, "Percentage (%)", "Categories")
+    else:
+        update_fig_layout(fig, title, "Count", "Categories")
+
     return fig
 
 if __name__ == "__main__":

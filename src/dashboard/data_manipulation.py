@@ -54,7 +54,7 @@ def filter_taxonomy(dataframe: pd.DataFrame,
                    selected_class: str, 
                    selected_order: str, 
                    selected_family: str, 
-                   selected_specie: str) -> pd.DataFrame:
+                   selected_species: str) -> pd.DataFrame:
     """
     Filters the DataFrame based on selected taxonomic criteria.
     
@@ -65,7 +65,7 @@ def filter_taxonomy(dataframe: pd.DataFrame,
         selected_class (str): The class to filter by, or None to skip filtering by class.
         selected_order (str): The order to filter by, or None to skip filtering by order.
         selected_family (str): The family to filter by, or None to skip filtering by family.
-        selected_specie (str): The species to filter by, or None to skip filtering by species.
+        selected_species (str): The species to filter by, or None to skip filtering by species.
         
     Returns:
         pd.DataFrame: A filtered DataFrame containing only entries matching the selected taxonomic criteria.
@@ -81,11 +81,11 @@ def filter_taxonomy(dataframe: pd.DataFrame,
         filtered_df = filtered_df[filtered_df["taxon.order_name"] == selected_order]
     if selected_family:
         filtered_df = filtered_df[filtered_df["taxon.family_name"] == selected_family]
-    if selected_specie:
-        filtered_df = filtered_df[filtered_df["taxon.scientific_name"] == selected_specie]
+    if selected_species:
+        filtered_df = filtered_df[filtered_df["taxon.scientific_name"] == selected_species]
     return filtered_df
 
-def filter_years(dataframe, countries_dataframe, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries):
+def filter_years(dataframe, countries_dataframe, selected_species, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries):
     """
     Generates list of unique years of assessments given taxonomic criteria and country subset.
     
@@ -97,7 +97,7 @@ def filter_years(dataframe, countries_dataframe, selected_specie, selected_famil
         selected_class (str): The class to filter by, or None to skip filtering by class.
         selected_order (str): The order to filter by, or None to skip filtering by order.
         selected_family (str): The family to filter by, or None to skip filtering by family.
-        selected_specie (str): The species to filter by, or None to skip filtering by species.
+        selected_species (str): The species to filter by, or None to skip filtering by species.
         selected_countries (list): Countries to filter by
         
     Returns:
@@ -120,7 +120,7 @@ def filter_years(dataframe, countries_dataframe, selected_specie, selected_famil
                   (dataframe["taxon.phylum_name"] == selected_phylum) &
                   (dataframe["taxon.class_name"] == selected_class) &
                   (dataframe["taxon.order_name"] == selected_order)]["taxon.sis_id"].dropna().unique())
-    elif selected_specie is None:
+    elif selected_species is None:
         ids_species = list(dataframe[(dataframe["taxon.kingdom_name"] == selected_kingdom) & 
                   (dataframe["taxon.phylum_name"] == selected_phylum) &
                   (dataframe["taxon.class_name"] == selected_class) &
@@ -132,7 +132,7 @@ def filter_years(dataframe, countries_dataframe, selected_specie, selected_famil
                   (dataframe["taxon.class_name"] == selected_class) &
                   (dataframe["taxon.order_name"] == selected_order) &
                   (dataframe["taxon.family_name"] == selected_family) &
-                  (dataframe["taxon.scientific_name"] == selected_specie)]["taxon.sis_id"].dropna().unique())
+                  (dataframe["taxon.scientific_name"] == selected_species)]["taxon.sis_id"].dropna().unique())
     if selected_countries:
         ids_countries = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].dropna().unique())
     if selected_countries and selected_kingdom:    
@@ -189,15 +189,15 @@ def create_list_unique_years(dataframe: pd.DataFrame) -> list:
         list: A sorted list of unique years as integers, excluding any non-integer values.
     """
     years = list(dataframe['year_published'].unique())
-    unique_years = []
+    UNIQUE_YEARS = []
     for value in years:
         try:
             int_value = int(value)
-            unique_years.append(int_value)
+            UNIQUE_YEARS.append(int_value)
         except:
             continue
-    unique_years.sort()
-    return unique_years
+    UNIQUE_YEARS.sort()
+    return UNIQUE_YEARS
 
 def generate_uses_count(dataframe: pd.DataFrame, uses_dataframe: pd.DataFrame) -> dict:
     """
@@ -246,9 +246,14 @@ def read_shapefiles(base_dir):
     for file in os.listdir(shapefiles_dir):
         if file.endswith(".shp"):  # Verificar se é um shapefile
             file_path = os.path.join(shapefiles_dir, file)
+
+            print(f"Opening shapefile at {file_path}")
+            
             gdf = gpd.read_file(file_path, encoding="utf-8")
             gdf = gdf[columns_to_keep]
             geo_dataframes.append(gdf)
+            if len(geo_dataframes) == 5:
+                break
     
     # Concatenar todos os GeoDataFrames em um único
     final_gdf = pd.concat(geo_dataframes, ignore_index=True)
@@ -259,13 +264,12 @@ def read_shapefiles(base_dir):
 base_dir = os.path.dirname(os.path.abspath(__file__))
 gdf = read_shapefiles(base_dir)
 
-dataframe = pd.read_csv(os.path.join(base_dir, "../../data/assessments.csv"))
-uses_dataframe = pd.read_csv(os.path.join(base_dir, "../../data/uses.csv"))
-countries_dataframe = pd.read_csv(os.path.join(base_dir, "../../data/countries.csv"))
+ASSESSMENT_DATAFRAME = pd.read_csv(os.path.join(base_dir, "../../data/assessments.csv"))
+USES_DATAFRAME = pd.read_csv(os.path.join(base_dir, "../../data/uses.csv"))
+COUNTRIES_DATAFRAME = pd.read_csv(os.path.join(base_dir, "../../data/countries.csv"))
 
-unique_ids = list(dataframe['taxon.sis_id'].unique())
-unique_years = create_list_unique_years(dataframe)
-countries = list(countries_dataframe["Country"].unique())
-unique_categories = ["NE", "LC", "LT", "VU", "EN", "CR", "RE", "EW", "EX"]
-#unique_categories = list(dataframe["risk_category"].dropna().unique())
-species = list(dataframe['taxon.scientific_name'].unique())
+UNIQUE_YEARS = create_list_unique_years(ASSESSMENT_DATAFRAME)
+UNIQUE_COUNTRIES = list(COUNTRIES_DATAFRAME["Country"].unique())
+UNIQUE_CATEGORIES = ["NE", "LC", "LT", "VU", "EN", "CR", "RE", "EW", "EX"]
+#UNIQUE_CATEGORIES = list(dataframe["risk_category"].dropna().unique())
+UNIQUE_SPECIES = list(ASSESSMENT_DATAFRAME['taxon.scientific_name'].unique())

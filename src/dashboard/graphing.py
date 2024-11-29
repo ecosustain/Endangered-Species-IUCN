@@ -63,6 +63,7 @@ def create_bars(fig, all_uses: list, dict_uses: dict, list_selected_items: list,
         values = [usage_counts.get(use, 0) for use in all_uses]
         x_list = calculate_values_per_mode(values, total, percentage_mode)
         if years_mode:
+            # remove casas decimais do ano representado como float
             add_bar(fig, x_list, all_uses, str(int(item)))
         else:
             add_bar(fig, x_list, all_uses, item)
@@ -89,7 +90,7 @@ def create_figure_with_bar(dict_counts: dict, percentage_mode: bool):
         marker=dict(color='skyblue')
     ))
     
-def update_graph_country(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+def update_graph_country(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use):
     
     """
@@ -98,17 +99,17 @@ def update_graph_country(selected_specie, selected_family, selected_order, selec
     """
     total = 0
     if selected_countries is None or len(selected_countries) == 0:
-        selected_countries = countries
+        selected_countries = UNIQUE_COUNTRIES
     dict_country_uses = {}        
     for country in selected_countries:
-        list_ids_country = list(countries_dataframe[countries_dataframe['Country'] == country]["ID"])
+        list_ids_country = list(COUNTRIES_DATAFRAME[COUNTRIES_DATAFRAME['Country'] == country]["ID"])
         filtered_df = filtered_df[filtered_df['taxon.sis_id'].isin(list_ids_country)]
-        filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_specie)
+        filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_species)
         if selected_years:
             years_dataframe = filter_some_years(filtered_df, selected_years)
             ids = list(years_dataframe['taxon.sis_id'].unique())
             filtered_df = filtered_df[filtered_df['taxon.sis_id'].isin(ids)]
-        usage_counts = generate_uses_count(filtered_df, uses_dataframe)
+        usage_counts = generate_uses_count(filtered_df, USES_DATAFRAME)
         dict_country_uses[country] = usage_counts
 
         for use in usage_counts.keys():
@@ -117,7 +118,7 @@ def update_graph_country(selected_specie, selected_family, selected_order, selec
 
     return selected_countries, dict_country_uses, total
 
-def update_graph_year(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+def update_graph_year(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use):
     
     """
@@ -128,18 +129,18 @@ def update_graph_year(selected_specie, selected_family, selected_order, selected
     dict_year_uses = {}
     total = 0 
     if selected_years is None or len(selected_years) == 0:
-        selected_years = filter_years(dataframe, countries_dataframe, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
+        selected_years = filter_years(ASSESSMENT_DATAFRAME, COUNTRIES_DATAFRAME, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
 
     if selected_countries:
-    	ids = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].unique())
-    	filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
-    filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_specie)    
+        ids = list(COUNTRIES_DATAFRAME[COUNTRIES_DATAFRAME['Country'].isin(selected_countries)]['ID'].unique())
+        filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
+    filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_species)    
     
     for year in selected_years:
         years_dataframe = filter_some_years(filtered_df, [year])
         ids = list(years_dataframe['taxon.sis_id'].unique())
         temp_df = filtered_df[filtered_df['taxon.sis_id'].isin(ids)]
-        usage_counts = generate_uses_count(temp_df, uses_dataframe)
+        usage_counts = generate_uses_count(temp_df, USES_DATAFRAME)
         dict_year_uses[year] = usage_counts
         
         for use in usage_counts.keys():
@@ -148,7 +149,7 @@ def update_graph_year(selected_specie, selected_family, selected_order, selected
 
     return selected_years, dict_year_uses, total
 
-def update_graph_risk(selected_specie, selected_family, selected_order, selected_class, selected_phylum, 
+def update_graph_risk(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use):
     
     """
@@ -156,9 +157,9 @@ def update_graph_risk(selected_specie, selected_family, selected_order, selected
         
     """
     if selected_countries:
-            ids = list(countries_dataframe[countries_dataframe['Country'].isin(selected_countries)]['ID'].unique())
+            ids = list(COUNTRIES_DATAFRAME[COUNTRIES_DATAFRAME['Country'].isin(selected_countries)]['ID'].unique())
             filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
-    filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_specie)
+    filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_species)
     if selected_years:
         years_dataframe = filter_some_years(filtered_df, selected_years)
         ids = list(years_dataframe['taxon.sis_id'].unique())
@@ -166,9 +167,9 @@ def update_graph_risk(selected_specie, selected_family, selected_order, selected
         
     dict_categories = {}
     total = 0
-    for category in unique_categories:
+    for category in UNIQUE_CATEGORIES:
         temp_dataframe = filtered_df[filtered_df["risk_category"] == category]
-        usage_counts = generate_uses_count(temp_dataframe, uses_dataframe)
+        usage_counts = generate_uses_count(temp_dataframe, USES_DATAFRAME)
         dict_categories[category] = usage_counts
         
         for use in usage_counts.keys():
