@@ -9,7 +9,7 @@ Created on Thu Nov  7 17:56:11 2024
 from data_manipulation import *
 from graphing import *
 
-app = Dash(__name__, external_stylesheets=[
+app = Dash(__name__, url_base_pathname='/endangered-species/', external_stylesheets=[
     "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Lato:wght@400;700&display=swap"
 ])
 

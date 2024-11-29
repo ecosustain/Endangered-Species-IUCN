@@ -97,7 +97,7 @@ def update_graph_country(selected_specie, selected_family, selected_order, selec
 
     """
     total = 0
-    if selected_countries is None:
+    if selected_countries is None or len(selected_countries) == 0:
         selected_countries = countries
     dict_country_uses = {}        
     for country in selected_countries:
@@ -127,7 +127,7 @@ def update_graph_year(selected_specie, selected_family, selected_order, selected
     
     dict_year_uses = {}
     total = 0 
-    if selected_years is None:
+    if selected_years is None or len(selected_years) == 0:
         selected_years = filter_years(dataframe, countries_dataframe, selected_specie, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries)
 
     if selected_countries:

@@ -2,7 +2,7 @@
 FROM python:3.9-slim
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /endangered-species
 
 # Copy the project files to the container
 COPY . .
@@ -11,4 +11,4 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Command to start the application
-CMD ["python", "src/app.py"]
+CMD ["python", "src/dashboard/app.py"]
