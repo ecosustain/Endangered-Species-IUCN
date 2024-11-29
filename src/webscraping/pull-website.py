@@ -10,58 +10,76 @@ ID_LIST_FILE = ""
 UNFINISHED_URL_FILE = ""
 
 def scroll_to_bottom(driver):
-    # Obter a altura atual da página
+    """
+    Scrolls to the bottom of a webpage to load all dynamic content.
+
+    Parameters:
+        driver (webdriver): The Selenium WebDriver instance controlling the browser.
+
+    Notes:
+        - The function repeatedly scrolls down until the page height no longer changes, 
+          indicating that all content has been loaded.
+        - A delay is included to allow new content to load dynamically.
+    """
+    # Get current page height
     last_height = driver.execute_script("return document.body.scrollHeight")
 
     while True:
-        # Rolar até o final da página
+        # Scroll to the bottom of the page
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-        # Aguardar para que a página carregue o novo conteúdo
-        time.sleep(2)  # Ajuste o tempo conforme necessário
+        # Wait for the page to load new content
+        time.sleep(2)  # Adjust the time as needed
 
-        # Calcular nova altura da página e comparar com a altura anterior
+        # Calculate new page height and compare with previous height
         new_height = driver.execute_script("return document.body.scrollHeight")
 
         if new_height == last_height:
-            break  # Se a altura não mudou, estamos no final da página
+            break  # If the height hasn't changed, we are at the bottom of the page.
         last_height = new_height
 
-# Chamar a função para rolar até o final da página
+# Call the function to scroll to the bottom of the page
 
 def scrolling_loop():
-    cont = 0
+    """
+    Scrolls through a webpage and attempts to click the "Show more" button repeatedly.
+
+    Notes:
+        - The function waits for the "Show more" button to appear and become clickable. 
+          Once clicked, it waits for new content to load before scrolling further.
+        - If the button cannot be found for 10 consecutive attempts, the loop exits.
+        - Used to dynamically expand content-heavy pages.
+    """
+    cont = 0 # Counter to track failed attempts to find the "Show more" button
     while True:
         try:  
-            # Esperar até que o botão "Show more" esteja presente e visível
+            # Wait until the "Show more" button is present and visible
             show_more_button = WebDriverWait(driver, 1).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "a.section__link-out[role='link']"))
             )
-            #driver.execute_script("arguments[0].scrollIntoView();", show_more_button)
             scroll_to_bottom(driver)
-            # Clicar no botão "Show more"
-            #show_more_button.click()
+            # Click on the "Show more" button
             driver.execute_script("arguments[0].click();", show_more_button)
 
-            # Aguarde um pouco para permitir que o conteúdo carregue
+            # Please wait a while to allow the content to load.
             time.sleep(1)
             scroll_to_bottom(driver)
-            cont = 0
+            cont = 0 # Reset the counter after a successful action
         except Exception as e:
-            # Se não encontrar o botão, saímos do loop
+            # If we don't find the button, we exit the loop.
             cont += 1
             if cont == 10:
                 break
             print(e)
-            print("Todos os elementos foram carregados ou ocorreu um erro.")
-            #break
+            print("All elements were loaded or an error occurred.")
 
 links = None
 species = set()
 
-service = Service('/snap/bin/firefox.geckodriver')  # Substitua pelo caminho do seu ChromeDriver
+service = Service('/snap/bin/firefox.geckodriver')  # Replace with the path to your ChromeDriver
 
-# Lista de URLs contendo filtros para a lista geral de espécies
+# List of URLs containing filters for the general species list
+# Modify this variable to include your urls
 urls = []
 
 for url in urls:
@@ -77,7 +95,7 @@ for url in urls:
         except: 
             count += 1
     if number_of_results == 0:
-        print("nao conseguiu carregar pagina")
+        print("Unable to load page.")
         break
     driver.quit()
 
@@ -87,23 +105,23 @@ for url in urls:
         driver = webdriver.Firefox(service=service)
         driver.get(url)
         try:
-            # Muda o layout da página de "grid" para "list"
+            # Change the page layout from "grid" to "list"
             element = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "a[class='nav-page__item nav-page__item--list']"))
             )
             element.click()
             time.sleep(5)     
         except:
-            print("nao conseguiu clickar na lista")
+            print("Unable to click on the list.")
         
-        #Loop para rolar até o fim da página até que não seja mais possível expandir a lista de resultados
+        # Loop to scroll to the bottom of the page until the list of results can no longer be expanded
         scrolling_loop()
         
         links = driver.find_elements(By.TAG_NAME, 'a')
-        # Extrair e imprimir os atributos 'href' de cada link
+        # Extract and print the 'href' attributes of each link
         for link in links:
             href = link.get_attribute('href')
-            if href:  # Verifica se o href não é None
+            if href:  # Checks if href is not None
                 s = href.strip().split("/")
                 if len(s) > 3 and s[-3] == "species":
                     url_species.add(int(s[-2]))
@@ -118,7 +136,7 @@ for url in urls:
     species = species.union(url_species)
     if len(url_species) != number_of_results:
         with open(UNFINISHED_URL_FILE, "a+") as f:
-            f.write(f"{url} precisa ser dividida, nao conseguiu pegar todos ids\n")
+            f.write(f"{url} needs to be split, couldn't get all ids.\n")
 
 with open(ID_LIST_FILE, "w") as file:
     for i in species:

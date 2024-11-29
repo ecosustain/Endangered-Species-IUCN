@@ -10,15 +10,25 @@ import os
 import gc
 
 def clean_input(input_string: str) -> str:
+    """
+    Cleans the input string by removing leading and trailing whitespace 
+    and replacing multiple consecutive spaces with a single space.
+
+    Parameters:
+        input_string (str): The input string to be cleaned.
+
+    Returns:
+        str: The cleaned string with normalized spacing.
+    """
     return ' '.join(input_string.strip().split())
 
-def filter_dataframe_by_specie(df, specie):
+def filter_dataframe_by_specie(df: pd.DataFrame, species: str) -> pd.DataFrame:
     """
     Generate year series dataframe for a specific species
 
     Args:
         df (pd.DataFrame): DataFrame of species assessments
-        specie (str): Scientific name of a species
+        species (str): Scientific name of a species
     
     Returns:
         pd.DataFrame: contains status of a species in every year between first and last assessments
@@ -35,13 +45,13 @@ def filter_dataframe_by_specie(df, specie):
             'EX': 8}
     
     year = datetime.date.today().year
-    df_specie = df[df['taxon.scientific_name'] == specie]
-    df_specie = df_specie.dropna(subset=['year_published'])
-    df_specie["year_published"] = df_specie["year_published"].astype(int)
+    df_species = df[df['taxon.scientific_name'] == species]
+    df_species = df_species.dropna(subset=['year_published'])
+    df_species["year_published"] = df_species["year_published"].astype(int)
 
-    year_series = pd.Series(list(range(min(df_specie['year_published']), year+1)), name="Years")
+    year_series = pd.Series(list(range(min(df_species['year_published']), year+1)), name="Years")
     df_plot = year_series.to_frame()
-    df_plot = df_plot.merge(df_specie[['year_published', 'risk_category']], how='left', left_on='Years', right_on='year_published')
+    df_plot = df_plot.merge(df_species[['year_published', 'risk_category']], how='left', left_on='Years', right_on='year_published')
     df_plot['categoriaOrdem'] = df_plot['risk_category'].map(status_enum)
     df_plot.drop('year_published', axis=1, inplace=True)
     df_plot = df_plot.ffill()
@@ -85,7 +95,15 @@ def filter_taxonomy(dataframe: pd.DataFrame,
         filtered_df = filtered_df[filtered_df["taxon.scientific_name"] == selected_species]
     return filtered_df
 
-def filter_years(dataframe, countries_dataframe, selected_species, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries):
+def filter_years(dataframe: pd.DataFrame, 
+		        countries_dataframe: pd.DataFrame, 
+		        selected_species: str, 
+		        selected_family: str, 
+		        selected_order: str, 
+		        selected_class: str, 
+		        selected_phylum: str, 
+		        selected_kingdom: str, 
+		        selected_countries: list) -> list:
     """
     Generates list of unique years of assessments given taxonomic criteria and country subset.
     
@@ -150,14 +168,15 @@ def filter_years(dataframe, countries_dataframe, selected_species, selected_fami
 
 def filter_some_years(dataframe: pd.DataFrame, list_years: list) -> pd.DataFrame:
     """
-    Filters the DataFrame to include only entries published in specified years.
+    Filters the DataFrame to include only assessments published in specified years.
     
     Args:
-        dataframe (pd.DataFrame): DataFrame containing a 'year_published' column with publication years.
+        dataframe (pd.DataFrame): Assessments DataFrame.
         list_years (list): List of years to filter the data by.
         
     Returns:
-        pd.DataFrame: Filtered DataFrame containing only rows with publication years in list_years.
+        pd.DataFrame: Filtered DataFrame containing only assessments with publication years in 
+        list_years.
     """
     return dataframe[dataframe['year_published'].isin(list_years)]
 
@@ -180,10 +199,11 @@ def calculate_values_per_mode(list_of_values: list, total: int, percentage_mode:
 
 def create_list_unique_years(dataframe: pd.DataFrame) -> list:
     """
-    Extracts and returns a sorted list of unique years from the 'year_published' column in the DataFrame.
+    Extracts and returns a sorted list of unique years from the 'year_published' 
+    column in the Assessments DataFrame.
     
     Args:
-        dataframe (pd.DataFrame): The DataFrame containing the 'year_published' column with publication years.
+        dataframe (pd.DataFrame): The assessments DataFrame.
         
     Returns:
         list: A sorted list of unique years as integers, excluding any non-integer values.
@@ -219,7 +239,7 @@ def generate_uses_count(dataframe: pd.DataFrame, uses_dataframe: pd.DataFrame) -
         pass
     return usage_counts
 
-def read_shapefiles(base_dir):
+def read_shapefiles(base_dir: str):
     """
         Reads shapefiles from a directory into a GeoDataFrame 
 
@@ -232,19 +252,17 @@ def read_shapefiles(base_dir):
 
     shapefiles_dir = os.path.join(base_dir, "../../data/shapefiles")
     
-    # Lista para armazenar os GeoDataFrames
+    # List to store the GeoDataFrames
     geo_dataframes = []
-    
-    # Colunas que você deseja manter
-    columns_to_keep = ["sci_name", "geometry"]  # Inclua 'geometry' para manter a geometria
-    #file_path = os.path.join(shapefiles_dir, 'FW_FISH_PART1.shp')
-    #gdf =  gpd.read_file(file_path, encoding='utf-8')
-    #gdf = gdf[columns_to_keep]
-    #return gdf
+    columns_to_keep = ["sci_name", "geometry"]
+    file_path = os.path.join(shapefiles_dir, 'FW_FISH_PART1.shp')
+    gdf =  gpd.read_file(file_path, encoding='utf-8')
+    gdf = gdf[columns_to_keep]
+    return gdf
 
-    # Percorrer todos os arquivos no diretório
+    # Traverse all files in directory
     for file in os.listdir(shapefiles_dir):
-        if file.endswith(".shp"):  # Verificar se é um shapefile
+        if file.endswith(".shp"):  # Check if it is a shapefile
             file_path = os.path.join(shapefiles_dir, file)
 
             print(f"Opening shapefile at {file_path}")
@@ -255,7 +273,7 @@ def read_shapefiles(base_dir):
             if len(geo_dataframes) == 5:
                 break
     
-    # Concatenar todos os GeoDataFrames em um único
+    # Concatenate all GeoDataFrames into a single one
     final_gdf = pd.concat(geo_dataframes, ignore_index=True)
     del geo_dataframes
     gc.collect()
@@ -271,5 +289,4 @@ COUNTRIES_DATAFRAME = pd.read_csv(os.path.join(base_dir, "../../data/countries.c
 UNIQUE_YEARS = create_list_unique_years(ASSESSMENT_DATAFRAME)
 UNIQUE_COUNTRIES = list(COUNTRIES_DATAFRAME["Country"].unique())
 UNIQUE_CATEGORIES = ["NE", "LC", "LT", "VU", "EN", "CR", "RE", "EW", "EX"]
-#UNIQUE_CATEGORIES = list(dataframe["risk_category"].dropna().unique())
 UNIQUE_SPECIES = list(ASSESSMENT_DATAFRAME['taxon.scientific_name'].unique())

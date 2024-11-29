@@ -2,7 +2,7 @@
 
 This project concerns the collecting and presenting, in the form of a dashboard, of data obtained from the IUCN RedList website and API. Any use of the contents of this project should follow the terms of service of the IUCN RedList.
 
-The source code for the project is found in the src/ directory. It is divided into three parts:
+The source code for the project is found in the src/ directory. It is divided into four parts:
     
 - webscraping subdirectory:
         
@@ -15,16 +15,18 @@ The source code for the project is found in the src/ directory. It is divided in
 
 - **clear_assessments.py**: This script converts assessments.json into multiple CSV files, which are used in the dashboard scripts.
 
+- **chi_test_per_country_proportion_vulnerable_species** - The script in R contains the analyses presented during phase 5 of the project. This analysis is divided into two parts: the first part is a chi-square test to assess any statistically significant differences in the proportions of vulnerable species among the countries that are trade partners with China, both before and after China's accession to the WTO. The second part involves plotting these proportions to provide a visual representation of the differences.
+
 
 - dashboard subdirectory:
-    - **callbacks.py**: This script is the entrypoint for the dashboard and contains all the callbacks for the webpage created by the Dash library.
+    - **app.py**: This script is the entrypoint for the dashboard and contains all the callbacks for the webpage created by the Dash library.
     
 
     - **graphing.py**: This script contains non-callback functions that create or update the graphs in the dashboard.
     
     - **data_manipulation.py**: This script contains dataframe filtering, file reading and other auxiliary functions.
     
-To run the dashboard, run callbacks.py. Make sure your data folder is properly set-up (check data_manipulation.py)
+To run the dashboard, run app.py. Make sure your data folder is properly set-up (check data_manipulation.py)
     
 
 

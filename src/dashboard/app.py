@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Nov  7 17:56:11 2024
-
-@author: rafaelom
-"""
 
 from data_manipulation import *
 from graphing import *
 
 app = Dash(__name__, url_base_pathname='/endangered-species/', external_stylesheets=[
     "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Lato:wght@400;700&display=swap"
-],url_base_pathname='/endangered-species/')
+])
 
 app.layout = html.Div([
     html.Div([
@@ -173,7 +168,7 @@ app.layout = html.Div([
     ], id="main-container3", className="main-container"),
 ], id="div_body")
 
-# Muitos das funções de callback contém argumentos inutilizados, porém eles são necessários para o funcionamento dos decoradores (demarcados com @)
+# Many of the callback functions contain unused arguments, but they are necessary for the decorators to work (marked with @)
 @app.callback(
     [Output("main-container1", "style"),
      Output("main-container2", "style"),
@@ -319,24 +314,26 @@ def update_map(n_clicks, n_submit, input_value):
     return fig, ""
 
 @app.callback(
-    [Output("default-mode-checklist", "value"), Output("country-mode-checklist", "value"), Output("year-mode-checklist", "value"), Output("category-checklist", "value")],
-    [Input("default-mode-checklist", "value"), Input("country-mode-checklist", "value"), Input("year-mode-checklist", "value"), Input("category-checklist", "value")],
+    [Output("default-mode-checklist", "value"), Output("country-mode-checklist", "value"), 
+    Output("year-mode-checklist", "value"), Output("category-checklist", "value")],
+    [Input("default-mode-checklist", "value"), Input("country-mode-checklist", "value"), 
+    Input("year-mode-checklist", "value"), Input("category-checklist", "value")],
 )
 def update_mode_checklists(selected_default_mode, selected_country_mode, selected_year_mode, selected_category_mode):
-    ctx = dash.callback_context  # contexto do callback para identificar o acionador
+    ctx = dash.callback_context  # callback context to identify the trigger
 
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
-    # Se o checklist de país foi acionado, ajusta para "stacked_country" e limpa o de ano
-    if triggered_id == "country-mode-checklist" and selected_country_mode:  # se estiver selecionado, aplica "stacked_country"
+    # If the country checklist was triggered, set it to "stacked_country" and clear the year checklist
+    if triggered_id == "country-mode-checklist" and selected_country_mode:  # if selected, applies "stacked_country"
         return [], ["country_mode"], [], []
 
-    # Se o checklist de ano foi acionado, ajusta para "stacked_year" e limpa o de país
-    elif triggered_id == "year-mode-checklist" and selected_year_mode:  # se estiver selecionado, aplica "stacked_year"
+    # If the year checklist was triggered, set it to "stacked_year" and clear the country checklist
+    elif triggered_id == "year-mode-checklist" and selected_year_mode:  # if selected, applies "stacked_year"
         return [], [], ["year_mode"], []
 
         
-    elif triggered_id == "category-checklist" and selected_category_mode:  # se estiver selecionado, aplica "stacked_year"
+    elif triggered_id == "category-checklist" and selected_category_mode:  # if selected, applies "stacked_year"
         return [], [], [], ["category_mode"]
     return ["default_mode"], [], [], []
 
@@ -350,7 +347,7 @@ def update_values_mode_checklists(absolute_value, percentage_value):
     ctx = dash.callback_context
     
     if not ctx.triggered:
-        # Inicia com o modo padrão marcado
+        # Starts with default mode checked
         return ["absolute_mode"], []
 
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
@@ -361,20 +358,18 @@ def update_values_mode_checklists(absolute_value, percentage_value):
     elif triggered_id == "percentage-mode-checklist" and percentage_value:
         return [], ["percentage_mode"]
 
-    return ["absolute_mode"], []  # Caso todos sejam desmarcados
+    return ["absolute_mode"], []  # If all are unchecked
         
-# Callback para atualizar o dropdown de reino baseado no país selecionado
+# Callback to update kingdom dropdown based on selected country
 @app.callback(
     Output("kingdom-dropdown", "options"),
     [Input("country-dropdown", "value")]
 )
 def update_kingdom_options(selected_countries):
-    #if not selected_countries:
-        #return []
     kingdoms = ASSESSMENT_DATAFRAME["taxon.kingdom_name"].unique()
     return [{"label": k, "value": k} for k in kingdoms]
 
-# Callbacks para atualizar os dropdowns sequencialmente (reino, filo, classe, ordem, família)
+# Callbacks to update dropdowns sequentially (kingdom, phylum, class, order, family)
 @app.callback(
     Output("phylum-dropdown", "options"),
     [Input("kingdom-dropdown", "value"), Input("country-dropdown", "value")]
@@ -398,7 +393,8 @@ def update_class_options(selected_phylum, selected_kingdom):
 
 @app.callback(
     Output("order-dropdown", "options"),
-    [Input("class-dropdown", "value"), Input("phylum-dropdown", "value"), Input("kingdom-dropdown", "value")]
+    [Input("class-dropdown", "value"), Input("phylum-dropdown", "value"), 
+    Input("kingdom-dropdown", "value")]
 )
 def update_order_options(selected_class, selected_phylum, selected_kingdom):
     if selected_class is None:
@@ -411,7 +407,8 @@ def update_order_options(selected_class, selected_phylum, selected_kingdom):
 
 @app.callback(
     Output("family-dropdown", "options"),
-    [Input("order-dropdown", "value"), Input("class-dropdown", "value"), Input("phylum-dropdown", "value"), Input("kingdom-dropdown", "value")]
+    [Input("order-dropdown", "value"), Input("class-dropdown", "value"), 
+    Input("phylum-dropdown", "value"), Input("kingdom-dropdown", "value")]
 )
 def update_family_options(selected_order, selected_class, selected_phylum, selected_kingdom):
     if selected_order is None:
@@ -425,7 +422,9 @@ def update_family_options(selected_order, selected_class, selected_phylum, selec
 
 @app.callback(
     Output("specie-dropdown", "options"),
-    [Input("family-dropdown", "value"), Input("order-dropdown", "value"), Input("class-dropdown", "value"), Input("phylum-dropdown", "value"), Input("kingdom-dropdown", "value")]
+    [Input("family-dropdown", "value"), Input("order-dropdown", "value"), 
+    Input("class-dropdown", "value"), Input("phylum-dropdown", "value"), 
+    Input("kingdom-dropdown", "value")]
 )
 def update_specie_options(selected_family, selected_order, selected_class, selected_phylum, selected_kingdom):
     if selected_family is None:
@@ -450,7 +449,7 @@ def update_years_options(selected_species, selected_family, selected_order, sele
     return [{"label": f, "value": f} for f in years]
 
 
-# Callback para atualizar o gráfico de barras
+# Callback to update the species usage bar chart
 @app.callback(
     Output("stacked-bar-chart", "figure"),
     [Input("specie-dropdown", "value"),
@@ -484,38 +483,37 @@ def update_graph(selected_species, selected_family, selected_order, selected_cla
     total = 0
     all_uses = list(total_by_use.keys())
     title = ""
-    if country_mode:
+    if country_mode: # Generates the stacked bar chart by country
         selected_countries, dict_country_uses, total = update_graph_country(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                                                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
-        # Calcular os percentuais para cada país
         create_bars(fig, all_uses, dict_country_uses, selected_countries, total, percentage_mode)
         title = "Species Use by Country"
         
-    elif year_mode:
+    elif year_mode: # Generates the stacked bar chart by year
         selected_years, dict_year_uses, total = update_graph_year(selected_species, selected_family, selected_order, selected_class, selected_phylum, selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
         
         create_bars(fig, all_uses, dict_year_uses, selected_years, total, percentage_mode, years_mode=True)
         title = "Species Use by Year"
 
 
-    elif category_mode:
+    elif category_mode: # Generates the stacked bar chart by risk category
         dict_categories, total = update_graph_risk(selected_species, selected_family, selected_order, selected_class, selected_phylum, 
                  selected_kingdom, selected_countries, selected_years, filtered_df, total_by_use)
         
         create_bars(fig, all_uses, dict_categories, UNIQUE_CATEGORIES, total, percentage_mode)
         title = "Species Use by Risk Category"
         
-    else:   
-        if selected_countries:
+    else: # Generates the accumulated bar chart
+        if selected_countries: # Filter by countries
             ids = list(COUNTRIES_DATAFRAME[COUNTRIES_DATAFRAME['Country'].isin(selected_countries)]['ID'].unique())
             filtered_df = filtered_df[filtered_df["taxon.sis_id"].isin(ids)]
         filtered_df = filter_taxonomy(filtered_df, selected_kingdom, selected_phylum, selected_class, selected_order, selected_family, selected_species)
-        if selected_years:
+        if selected_years: # Filter by years
             years_dataframe = filter_some_years(filtered_df, selected_years)
             ids = list(years_dataframe['taxon.sis_id'].unique())
             filtered_df = filtered_df[filtered_df['taxon.sis_id'].isin(ids)]
 
-        # Contar o número de espécies por categoria de uso
+        # Count the number of species by use category
         usage_counts = generate_uses_count(filtered_df, USES_DATAFRAME)
         for use in usage_counts.keys():
             total_by_use[use] += usage_counts[use]
@@ -524,9 +522,9 @@ def update_graph(selected_species, selected_family, selected_order, selected_cla
         fig = create_figure_with_bar(total_by_use, percentage_mode)
         title = "Species Use"
         
-    if percentage_mode:
+    if percentage_mode: # Displays values ​​in percentages
         update_fig_layout(fig, title, "Percentage (%)", "Categories")
-    else:
+    else: # Displays absolute values
         update_fig_layout(fig, title, "Count", "Categories")
 
     return fig

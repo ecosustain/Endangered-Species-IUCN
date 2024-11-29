@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Nov  7 17:22:59 2024
-
-@author: rafaelom
-"""
 
 import json
 import pandas as pd
@@ -89,6 +84,28 @@ def rename_uses(df: pd.DataFrame) -> None:
         df.at[i, 'use_and_trade'] = new_uses
         
 def map_risk_categories(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Maps and standardizes risk categories in the assessments dataframe to a simplified set of categories.
+
+    Parameters:
+        dataframe (pd.DataFrame): The assessments dataframe.
+
+    Returns:
+        pd.DataFrame: The dataframe with a renamed and standardized 'risk_category' column.
+
+    Notes:
+        This method maps various risk category values to a unified set of categories for consistency. 
+        Examples of mappings include:
+            - 'LC', 'LR/lc' → 'LC' (Least Concern)
+            - 'NT', 'LR/nt' → 'LT' (Little Threatened)
+            - 'V', 'VU' → 'VU' (Vulnerable)
+            - 'EN', 'E' → 'EN' (Endangered)
+            - 'CR' → 'CR' (Critically Endangered)
+            - 'RE' (Regionally Extinct)
+            - 'EW' (Extinct in the Wild)
+            - 'EX', 'Ex/E' → 'EX' (Extinct)
+            - Other unrecognized categories are mapped to 'NE' (Not Evaluated).
+    """
     mapping = {'LC': 'LC',
             'LR/lc': 'LC',
             'EN': 'EN',
@@ -123,6 +140,24 @@ def map_risk_categories(dataframe: pd.DataFrame) -> pd.DataFrame:
     
     
 def clean_assessments(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Cleans and processes the assessments dataframe by standardizing data and removing invalid entries.
+
+    Parameters:
+        dataframe (pd.DataFrame): The dataframe containing species assessments.
+
+    Returns:
+        pd.DataFrame: The cleaned dataframe with updated risk categories and no missing risk data.
+
+    Steps:
+        1. Renames and groups usage-related data using `rename_uses`.
+        2. Removes rows where the 'red_list_category' is missing.
+        3. Standardizes the risk categories using `map_risk_categories`.
+        4. Saves the cleaned dataframe to a CSV file for later use.
+    
+    Notes:
+        The cleaned dataframe is saved to "../data/assessments.csv".
+    """
     rename_uses(dataframe) # Rename and Group Usages
     dataframe = dataframe.dropna(subset=['red_list_category']) # Remove Assessments without Risk Data
     dataframe = map_risk_categories(dataframe) # Clear Risk Categories
